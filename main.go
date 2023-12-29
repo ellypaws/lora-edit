@@ -14,6 +14,7 @@ import (
 
 const (
 	initialInputs = 2
+	charLimit     = 0
 	maxInputs     = 6
 	minInputs     = 1
 	helpHeight    = 5
@@ -61,7 +62,7 @@ func newTextarea() textarea.Model {
 	t.KeyMap.LinePrevious = key.NewBinding(key.WithKeys("up"))
 	t.Blur()
 
-	t.CharLimit = 0
+	t.CharLimit = charLimit
 
 	return t
 }

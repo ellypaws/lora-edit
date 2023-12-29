@@ -114,7 +114,7 @@ func newModel() model {
 		m.inputs[i] = newTextarea()
 	}
 	m.inputs[m.focus].Focus()
-	m.updateKeybindings()
+	//m.updateKeybindings()
 	return m
 }
 
@@ -160,6 +160,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for i := 0; i < initialInputs; i++ {
 				m.inputs[i] = newTextarea()
 			}
+			m.inputs[m.focus].Focus()
 		}
 	case tea.WindowSizeMsg:
 		m.height = msg.Height

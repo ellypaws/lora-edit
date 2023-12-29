@@ -66,9 +66,8 @@ func newTextarea() textarea.Model {
 	return t
 }
 
-type keymap = struct {
-	Next, Prev, Add, Remove, Reset, Quit key.Binding
-}
+// Next, Prev, Add, Remove
+type keymap = struct{ Reset, Quit key.Binding }
 
 type model struct {
 	width  int
@@ -84,22 +83,22 @@ func newModel() model {
 		inputs: make([]textarea.Model, initialInputs),
 		help:   help.New(),
 		keymap: keymap{
-			Next: key.NewBinding(
-				key.WithKeys("tab"),
-				key.WithHelp("tab", "next"),
-			),
-			Prev: key.NewBinding(
-				key.WithKeys("shift+tab"),
-				key.WithHelp("shift+tab", "prev"),
-			),
-			Add: key.NewBinding(
-				key.WithKeys("ctrl+n"),
-				key.WithHelp("ctrl+n", "add an editor"),
-			),
-			Remove: key.NewBinding(
-				key.WithKeys("ctrl+w"),
-				key.WithHelp("ctrl+w", "remove an editor"),
-			),
+			//Next: key.NewBinding(
+			//	key.WithKeys("tab"),
+			//	key.WithHelp("tab", "next"),
+			//),
+			//Prev: key.NewBinding(
+			//	key.WithKeys("shift+tab"),
+			//	key.WithHelp("shift+tab", "prev"),
+			//),
+			//Add: key.NewBinding(
+			//	key.WithKeys("ctrl+n"),
+			//	key.WithHelp("ctrl+n", "add an editor"),
+			//),
+			//Remove: key.NewBinding(
+			//	key.WithKeys("ctrl+w"),
+			//	key.WithHelp("ctrl+w", "remove an editor"),
+			//),
 			Reset: key.NewBinding(
 				key.WithKeys("ctrl+r"),
 				key.WithHelp("ctrl+r", "reset"),
@@ -133,29 +132,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.inputs[i].Blur()
 			}
 			return m, tea.Quit
-		case key.Matches(msg, m.keymap.Next):
-			m.inputs[m.focus].Blur()
-			m.focus++
-			if m.focus > len(m.inputs)-1 {
-				m.focus = 0
-			}
-			cmd := m.inputs[m.focus].Focus()
-			cmds = append(cmds, cmd)
-		case key.Matches(msg, m.keymap.Prev):
-			m.inputs[m.focus].Blur()
-			m.focus--
-			if m.focus < 0 {
-				m.focus = len(m.inputs) - 1
-			}
-			cmd := m.inputs[m.focus].Focus()
-			cmds = append(cmds, cmd)
-		case key.Matches(msg, m.keymap.Add):
-			m.inputs = append(m.inputs, newTextarea())
-		case key.Matches(msg, m.keymap.Remove):
-			m.inputs = m.inputs[:len(m.inputs)-1]
-			if m.focus > len(m.inputs)-1 {
-				m.focus = len(m.inputs) - 1
-			}
+		//case key.Matches(msg, m.keymap.Next):
+		//	m.inputs[m.focus].Blur()
+		//	m.focus++
+		//	if m.focus > len(m.inputs)-1 {
+		//		m.focus = 0
+		//	}
+		//	cmd := m.inputs[m.focus].Focus()
+		//	cmds = append(cmds, cmd)
+		//case key.Matches(msg, m.keymap.Prev):
+		//	m.inputs[m.focus].Blur()
+		//	m.focus--
+		//	if m.focus < 0 {
+		//		m.focus = len(m.inputs) - 1
+		//	}
+		//	cmd := m.inputs[m.focus].Focus()
+		//	cmds = append(cmds, cmd)
+		//case key.Matches(msg, m.keymap.Add):
+		//	m.inputs = append(m.inputs, newTextarea())
+		//case key.Matches(msg, m.keymap.Remove):
+		//	m.inputs = m.inputs[:len(m.inputs)-1]
+		//	if m.focus > len(m.inputs)-1 {
+		//		m.focus = len(m.inputs) - 1
+		//	}
 		case key.Matches(msg, m.keymap.Reset):
 			for i := 0; i < initialInputs; i++ {
 				m.inputs[i] = newTextarea()
@@ -166,7 +165,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 	}
 
-	m.updateKeybindings()
+	//m.updateKeybindings()
 	m.sizeInputs()
 
 	// Update all textareas
@@ -187,8 +186,8 @@ func (m *model) sizeInputs() {
 }
 
 func (m *model) updateKeybindings() {
-	m.keymap.Add.SetEnabled(len(m.inputs) < maxInputs)
-	m.keymap.Remove.SetEnabled(len(m.inputs) > minInputs)
+	//m.keymap.Add.SetEnabled(len(m.inputs) < maxInputs)
+	//m.keymap.Remove.SetEnabled(len(m.inputs) > minInputs)
 }
 
 func (m model) View() string {

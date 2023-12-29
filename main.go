@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -42,10 +43,6 @@ var (
 				Border(lipgloss.HiddenBorder())
 )
 
-type keymap = struct {
-	next, prev, add, remove, quit key.Binding
-}
-
 func newTextarea() textarea.Model {
 	t := textarea.New()
 	t.Prompt = ""
@@ -63,7 +60,14 @@ func newTextarea() textarea.Model {
 	t.KeyMap.LineNext = key.NewBinding(key.WithKeys("down"))
 	t.KeyMap.LinePrevious = key.NewBinding(key.WithKeys("up"))
 	t.Blur()
+
+	t.CharLimit = 0
+
 	return t
+}
+
+type keymap = struct {
+	Next, Prev, Add, Remove, Reset, Quit key.Binding
 }
 
 type model struct {
@@ -80,23 +84,27 @@ func newModel() model {
 		inputs: make([]textarea.Model, initialInputs),
 		help:   help.New(),
 		keymap: keymap{
-			next: key.NewBinding(
+			Next: key.NewBinding(
 				key.WithKeys("tab"),
 				key.WithHelp("tab", "next"),
 			),
-			prev: key.NewBinding(
+			Prev: key.NewBinding(
 				key.WithKeys("shift+tab"),
 				key.WithHelp("shift+tab", "prev"),
 			),
-			add: key.NewBinding(
+			Add: key.NewBinding(
 				key.WithKeys("ctrl+n"),
 				key.WithHelp("ctrl+n", "add an editor"),
 			),
-			remove: key.NewBinding(
+			Remove: key.NewBinding(
 				key.WithKeys("ctrl+w"),
 				key.WithHelp("ctrl+w", "remove an editor"),
 			),
-			quit: key.NewBinding(
+			Reset: key.NewBinding(
+				key.WithKeys("ctrl+r"),
+				key.WithHelp("ctrl+r", "reset"),
+			),
+			Quit: key.NewBinding(
 				key.WithKeys("esc", "ctrl+c"),
 				key.WithHelp("esc", "quit"),
 			),
@@ -120,12 +128,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.keymap.quit):
+		case key.Matches(msg, m.keymap.Quit):
 			for i := range m.inputs {
 				m.inputs[i].Blur()
 			}
 			return m, tea.Quit
-		case key.Matches(msg, m.keymap.next):
+		case key.Matches(msg, m.keymap.Next):
 			m.inputs[m.focus].Blur()
 			m.focus++
 			if m.focus > len(m.inputs)-1 {
@@ -133,7 +141,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			cmd := m.inputs[m.focus].Focus()
 			cmds = append(cmds, cmd)
-		case key.Matches(msg, m.keymap.prev):
+		case key.Matches(msg, m.keymap.Prev):
 			m.inputs[m.focus].Blur()
 			m.focus--
 			if m.focus < 0 {
@@ -141,12 +149,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			cmd := m.inputs[m.focus].Focus()
 			cmds = append(cmds, cmd)
-		case key.Matches(msg, m.keymap.add):
+		case key.Matches(msg, m.keymap.Add):
 			m.inputs = append(m.inputs, newTextarea())
-		case key.Matches(msg, m.keymap.remove):
+		case key.Matches(msg, m.keymap.Remove):
 			m.inputs = m.inputs[:len(m.inputs)-1]
 			if m.focus > len(m.inputs)-1 {
 				m.focus = len(m.inputs) - 1
+			}
+		case key.Matches(msg, m.keymap.Reset):
+			for i := 0; i < initialInputs; i++ {
+				m.inputs[i] = newTextarea()
 			}
 		}
 	case tea.WindowSizeMsg:
@@ -175,25 +187,25 @@ func (m *model) sizeInputs() {
 }
 
 func (m *model) updateKeybindings() {
-	m.keymap.add.SetEnabled(len(m.inputs) < maxInputs)
-	m.keymap.remove.SetEnabled(len(m.inputs) > minInputs)
+	m.keymap.Add.SetEnabled(len(m.inputs) < maxInputs)
+	m.keymap.Remove.SetEnabled(len(m.inputs) > minInputs)
 }
 
 func (m model) View() string {
-	help := m.help.ShortHelpView([]key.Binding{
-		m.keymap.next,
-		m.keymap.prev,
-		m.keymap.add,
-		m.keymap.remove,
-		m.keymap.quit,
-	})
+	var keyBindings []key.Binding
+	keyMap := reflect.ValueOf(m.keymap)
+	for i := 0; i < keyMap.NumField(); i++ {
+		keyBindings = append(keyBindings, keyMap.Field(i).Interface().(key.Binding))
+	}
+
+	helpView := m.help.ShortHelpView(keyBindings)
 
 	var views []string
 	for i := range m.inputs {
 		views = append(views, m.inputs[i].View())
 	}
 
-	return lipgloss.JoinHorizontal(lipgloss.Top, views...) + "\n\n" + help
+	return lipgloss.JoinHorizontal(lipgloss.Top, views...) + "\n\n" + helpView
 }
 
 func main() {

@@ -170,8 +170,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Update all textareas
 	for i := range m.inputs {
-		newModel, cmd := m.inputs[i].Update(msg)
-		m.inputs[i] = newModel
+		update, cmd := m.inputs[i].Update(msg)
+		m.inputs[i] = update
 		cmds = append(cmds, cmd)
 	}
 

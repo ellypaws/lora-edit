@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"reflect"
-
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"os"
+	"reflect"
+	"regexp"
 )
 
 const (
@@ -71,18 +71,20 @@ func newTextarea() textarea.Model {
 type keymap = struct{ Reset, Quit key.Binding }
 
 type model struct {
-	width  int
-	height int
-	keymap keymap
-	help   help.Model
-	inputs []textarea.Model
-	focus  int
+	width    int
+	height   int
+	keymap   keymap
+	settings settings
+	help     help.Model
+	inputs   []textarea.Model
+	focus    int
 }
 
 func newModel() model {
 	m := model{
-		inputs: make([]textarea.Model, initialInputs),
-		help:   help.New(),
+		inputs:   make([]textarea.Model, initialInputs),
+		help:     help.New(),
+		settings: initialModel(),
 		keymap: keymap{
 			//Next: key.NewBinding(
 			//	key.WithKeys("tab"),
@@ -113,13 +115,13 @@ func newModel() model {
 	for i := 0; i < initialInputs; i++ {
 		m.inputs[i] = newTextarea()
 	}
-	m.inputs[m.focus].Focus()
+	//m.inputs[m.focus].Focus()
 	//m.updateKeybindings()
 	return m
 }
 
 func (m model) Init() tea.Cmd {
-	return textarea.Blink
+	return tea.Batch(textarea.Blink, m.settings.Init())
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -161,9 +163,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.inputs[i] = newTextarea()
 			}
 			m.inputs[m.focus].Focus()
+		case msg.String() == "up":
+			if m.inputs[m.focus].Line() == 0 {
+				m.inputs[m.focus].Blur()
+				if m.settings.focusIndex > 0 {
+					cmds = m.updateSettings(msg, cmds)
+				}
+			}
+		case msg.String() == "down" || msg.String() == "enter":
+			cmds = m.updateSettings(msg, cmds)
+			if m.settings.focusIndex == len(m.settings.inputs) && !m.inputs[m.focus].Focused() {
+				m.inputs[m.focus].Focus()
+				return m, tea.Batch(cmds...)
+			}
+		default:
+			cmds = m.updateSettings(msg, cmds)
 		}
 	case tea.WindowSizeMsg:
-		m.height = msg.Height
+		m.height = msg.Height - lipgloss.Height(m.settings.View()) - 2
 		m.width = msg.Width
 	}
 
@@ -171,13 +188,52 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.sizeInputs()
 
 	// Update all textareas
-	for i := range m.inputs {
-		update, cmd := m.inputs[i].Update(msg)
-		m.inputs[i] = update
-		cmds = append(cmds, cmd)
+	if m.settings.focusIndex == len(m.settings.inputs) {
+		//m.inputs[m.focus].Focus()
+		for i := range m.inputs {
+			update, cmd := m.inputs[i].Update(msg)
+			m.inputs[i] = update
+			cmds = append(cmds, cmd)
+		}
 	}
 
+	m.parse()
+
 	return m, tea.Batch(cmds...)
+}
+
+func (m *model) updateSettings(msg tea.Msg, cmds []tea.Cmd) []tea.Cmd {
+	newSettings, cmd := m.settings.Update(msg)
+	m.settings = newSettings.(settings)
+	cmds = append(cmds, cmd)
+	return cmds
+}
+
+var regEx = regexp.MustCompile(`<lora:([\w-]+):([\d.]+)>`)
+
+func (m *model) parse() {
+	if m.inputs[0].Value() == "" {
+		m.inputs[1].SetValue("")
+		return
+	}
+	var (
+		keep       = m.settings.inputs[0].Value()
+		keepWeight = m.settings.inputs[1].Value()
+		weight     = m.settings.inputs[2].Value()
+	)
+	result := regEx.ReplaceAllStringFunc(m.inputs[0].Value(), func(s string) string {
+		matches := regEx.FindStringSubmatch(s)
+		return fmt.Sprintf("<lora:%s:%v>", matches[1], IF(matches[1] == keep, keepWeight, weight))
+	})
+	m.inputs[1].SetValue(result)
+}
+
+// IF returns trueVal if condition is true, otherwise falseVal.
+func IF[T any](condition bool, trueVal, falseVal T) T {
+	if condition {
+		return trueVal
+	}
+	return falseVal
 }
 
 func (m *model) sizeInputs() {
@@ -206,7 +262,10 @@ func (m model) View() string {
 		views = append(views, m.inputs[i].View())
 	}
 
-	return lipgloss.JoinHorizontal(lipgloss.Top, views...) + "\n\n" + helpView
+	return lipgloss.JoinVertical(lipgloss.Center, m.settings.View(),
+		fmt.Sprintf("focusIndex: %d, m.focus: %d, m.inputs[m.focus].Line(): %d", m.settings.focusIndex, m.focus, m.inputs[m.focus].Line()),
+		fmt.Sprintf("m.settings.focusIndex < len(m.settings.inputs) - 1 = %v < %v = %t\n", m.settings.focusIndex, len(m.settings.inputs)-1, m.settings.focusIndex < len(m.settings.inputs)-1),
+		lipgloss.JoinHorizontal(lipgloss.Top, views...)+"\n\n"+helpView)
 }
 
 func main() {

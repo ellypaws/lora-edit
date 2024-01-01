@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"log"
 	"os"
 	"reflect"
 	"regexp"
@@ -68,7 +70,7 @@ func newTextarea() textarea.Model {
 }
 
 // Next, Prev, Add, Remove
-type keymap = struct{ Reset, Quit key.Binding }
+type keymap = struct{ Copy, Reset, Quit key.Binding }
 
 type model struct {
 	width    int
@@ -102,6 +104,10 @@ func newModel() model {
 			//	key.WithKeys("ctrl+w"),
 			//	key.WithHelp("ctrl+w", "remove an editor"),
 			//),
+			Copy: key.NewBinding(
+				key.WithKeys("ctrl+c"),
+				key.WithHelp("ctrl+c", "copy"),
+			),
 			Reset: key.NewBinding(
 				key.WithKeys("ctrl+r"),
 				key.WithHelp("ctrl+r", "reset"),
@@ -130,6 +136,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
+		case key.Matches(msg, m.keymap.Copy):
+			// copy m.inputs[1].Value() to clipboard
+			err := clipboard.WriteAll(m.inputs[1].Value())
+			if err != nil {
+				log.Panicf("Error copying to clipboard: %v", err)
+			}
+			return m, nil
 		case key.Matches(msg, m.keymap.Quit):
 			for i := range m.inputs {
 				m.inputs[i].Blur()

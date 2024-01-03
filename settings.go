@@ -36,7 +36,7 @@ func initialModel() settings {
 		t.CharLimit = 32
 
 		isFloat := func(s string) error {
-			if _, err := strconv.ParseFloat(s, 64); err != nil {
+			if f, e := strconv.ParseFloat(s, 64); e != nil || f < 0 || f >= 10 {
 				return errors.New("invalid number")
 			}
 			return nil
@@ -136,7 +136,7 @@ func (m settings) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					break
 				}
 				float -= 0.05
-				m.inputs[m.focusIndex].SetValue(strconv.FormatFloat(max(0, float), 'f', 2, 64))
+				m.inputs[m.focusIndex].SetValue(strconv.FormatFloat(float, 'f', 2, 64))
 			}
 
 			if msg.String() == "right" {
@@ -145,7 +145,7 @@ func (m settings) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					break
 				}
 				float += 0.05
-				m.inputs[m.focusIndex].SetValue(strconv.FormatFloat(max(0, float), 'f', 2, 64))
+				m.inputs[m.focusIndex].SetValue(strconv.FormatFloat(float, 'f', 2, 64))
 			}
 			return m, nil
 		}

@@ -126,7 +126,7 @@ func (m settings) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 
 		case "left", "right":
-			if m.focusIndex == 0 {
+			if m.focusIndex != 1 && m.focusIndex != 2 {
 				break
 			}
 

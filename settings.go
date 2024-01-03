@@ -124,6 +124,30 @@ func (m settings) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			return m, tea.Batch(cmds...)
+
+		case "left", "right":
+			if m.focusIndex == 0 {
+				break
+			}
+
+			if msg.String() == "left" {
+				float, err := strconv.ParseFloat(m.inputs[m.focusIndex].Value(), 64)
+				if err != nil {
+					break
+				}
+				float -= 0.05
+				m.inputs[m.focusIndex].SetValue(strconv.FormatFloat(max(0, float), 'f', 2, 64))
+			}
+
+			if msg.String() == "right" {
+				float, err := strconv.ParseFloat(m.inputs[m.focusIndex].Value(), 64)
+				if err != nil {
+					break
+				}
+				float += 0.05
+				m.inputs[m.focusIndex].SetValue(strconv.FormatFloat(max(0, float), 'f', 2, 64))
+			}
+			return m, nil
 		}
 	}
 

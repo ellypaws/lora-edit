@@ -24,6 +24,12 @@ type settings struct {
 	cursorMode cursor.Mode
 }
 
+const (
+	LoraToKeep = iota
+	KeepWeight
+	LoseWeight
+)
+
 func initialModel() settings {
 	m := settings{
 		inputs: make([]textinput.Model, 3),
@@ -43,18 +49,18 @@ func initialModel() settings {
 		}
 
 		switch i {
-		case 0:
+		case LoraToKeep:
 			t.Placeholder = "Lora to keep"
 			t.Focus()
 			t.PromptStyle = focusedStyle
 			t.TextStyle = focusedStyle
-		case 1:
+		case KeepWeight:
 			t.Placeholder = "0.75"
 			t.SetValue(t.Placeholder)
 			t.Validate = isFloat
 			t.Prompt = "Keep: "
 			t.CharLimit = 4
-		case 2:
+		case LoseWeight:
 			t.Placeholder = "0.15"
 			t.SetValue(t.Placeholder)
 			t.Validate = isFloat
@@ -126,7 +132,7 @@ func (m settings) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 
 		case "left", "right":
-			if m.focusIndex != 1 && m.focusIndex != 2 {
+			if m.focusIndex != KeepWeight && m.focusIndex != LoseWeight {
 				break
 			}
 

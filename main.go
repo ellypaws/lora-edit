@@ -12,6 +12,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strconv"
 )
 
 const (
@@ -121,7 +122,7 @@ func newModel() model {
 	for i := 0; i < initialInputs; i++ {
 		m.inputs[i] = newTextarea()
 	}
-	//m.inputs[m.focus].Focus()
+	m.inputs[m.focus].Focus()
 	//m.updateKeybindings()
 	return m
 }
@@ -234,15 +235,31 @@ func (m *model) parse() {
 		keepWeight = m.settings.inputs[1].Value()
 		weight     = m.settings.inputs[2].Value()
 	)
+	weightFloat, err := strconv.ParseFloat(weight, 64)
+	if err != nil {
+		weightFloat = 0.15
+	}
 	result := regEx.ReplaceAllStringFunc(m.inputs[0].Value(), func(s string) string {
 		matches := regEx.FindStringSubmatch(s)
-		return fmt.Sprintf("<lora:%s:%v>", matches[1], IF(matches[1] == keep, keepWeight, weight))
+		// TODO: Use lowest value between weight or float when matches[1] != keep, aka the other loras
+		float, err := strconv.ParseFloat(matches[2], 64)
+		if err != nil {
+			return s
+		}
+		return fmt.Sprintf("<lora:%s:%v>", matches[1], untypedIF(matches[1] == keep, keepWeight, min(float, weightFloat)))
 	})
 	m.inputs[1].SetValue(result)
 }
 
 // IF returns trueVal if condition is true, otherwise falseVal.
 func IF[T any](condition bool, trueVal, falseVal T) T {
+	if condition {
+		return trueVal
+	}
+	return falseVal
+}
+
+func untypedIF(condition bool, trueVal, falseVal any) any {
 	if condition {
 		return trueVal
 	}

@@ -32,7 +32,8 @@ const (
 
 func initialModel() settings {
 	m := settings{
-		inputs: make([]textinput.Model, 3),
+		focusIndex: 3,
+		inputs:     make([]textinput.Model, 3),
 	}
 
 	var t textinput.Model
@@ -51,7 +52,6 @@ func initialModel() settings {
 		switch i {
 		case LoraToKeep:
 			t.Placeholder = "Lora to keep"
-			t.Focus()
 			t.PromptStyle = focusedStyle
 			t.TextStyle = focusedStyle
 		case KeepWeight:

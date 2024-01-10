@@ -51,9 +51,9 @@ func initialModel() settings {
 
 		switch i {
 		case LoraToKeep:
-			t.Placeholder = "Lora to keep"
-			t.PromptStyle = focusedStyle
-			t.TextStyle = focusedStyle
+			t.Placeholder = "lora-name"
+			t.Prompt = ""
+			t.EchoMode = textinput.EchoPassword
 		case KeepWeight:
 			t.Placeholder = "0.75"
 			t.SetValue(t.Placeholder)
@@ -179,7 +179,13 @@ func (m settings) View() string {
 	var b strings.Builder
 
 	for i := range m.inputs {
+		if i == 0 {
+			b.WriteString("<lora:")
+		}
 		b.WriteString(m.inputs[i].View())
+		if i == 0 {
+			b.WriteString(":weight>")
+		}
 		if i < len(m.inputs)-1 {
 			b.WriteRune('\n')
 		}

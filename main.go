@@ -71,7 +71,7 @@ func newTextarea() textarea.Model {
 }
 
 // Next, Prev, Add, Remove
-type keymap = struct{ Copy, Reset, Quit key.Binding }
+type keymap = struct{ Copy, Reset, Quit, Left, Right key.Binding }
 
 type model struct {
 	width    int
@@ -116,6 +116,14 @@ func newModel() model {
 			Quit: key.NewBinding(
 				key.WithKeys("esc", "ctrl+c"),
 				key.WithHelp("esc", "quit"),
+			),
+			Left: key.NewBinding(
+				key.WithKeys("left"),
+				key.WithHelp("←", "decrease weight"),
+			),
+			Right: key.NewBinding(
+				key.WithKeys("right"),
+				key.WithHelp("→", "add weight"),
 			),
 		},
 	}

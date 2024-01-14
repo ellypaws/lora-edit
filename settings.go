@@ -181,11 +181,18 @@ func (m settings) View() string {
 	for i := range m.inputs {
 		if i == 0 {
 			b.WriteString("<lora:")
+		} else if m.focusIndex == i {
+			b.WriteString("← ")
 		}
+
 		b.WriteString(m.inputs[i].View())
+
 		if i == 0 {
 			b.WriteString(":weight>")
+		} else if m.focusIndex == i {
+			b.WriteString(" →")
 		}
+
 		if i < len(m.inputs)-1 {
 			b.WriteRune('\n')
 		}

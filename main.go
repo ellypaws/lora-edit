@@ -202,7 +202,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = m.updateSettings(msg, cmds)
 		}
 	case tea.WindowSizeMsg:
-		m.height = msg.Height - lipgloss.Height(m.settings.View()) - 2
+		m.height = msg.Height - lipgloss.Height(m.settings.View())
 		m.width = msg.Width
 	}
 
@@ -249,7 +249,6 @@ func (m *model) parse() {
 	}
 	result := regEx.ReplaceAllStringFunc(m.inputs[0].Value(), func(s string) string {
 		matches := regEx.FindStringSubmatch(s)
-		// TODO: Use lowest value between weight or float when matches[1] != keep, aka the other loras
 		float, err := strconv.ParseFloat(matches[2], 64)
 		if err != nil {
 			return s
@@ -301,8 +300,8 @@ func (m model) View() string {
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Center, m.settings.View(),
-		fmt.Sprintf("focusIndex: %d, m.focus: %d, m.inputs[m.focus].Line(): %d", m.settings.focusIndex, m.focus, m.inputs[m.focus].Line()),
-		fmt.Sprintf("m.settings.focusIndex < len(m.settings.inputs) - 1 = %v < %v = %t\n", m.settings.focusIndex, len(m.settings.inputs)-1, m.settings.focusIndex < len(m.settings.inputs)-1),
+		//fmt.Sprintf("focusIndex: %d, m.focus: %d, m.inputs[m.focus].Line(): %d", m.settings.focusIndex, m.focus, m.inputs[m.focus].Line()),
+		//fmt.Sprintf("m.settings.focusIndex < len(m.settings.inputs) - 1 = %v < %v = %t\n", m.settings.focusIndex, len(m.settings.inputs)-1, m.settings.focusIndex < len(m.settings.inputs)-1),
 		lipgloss.JoinHorizontal(lipgloss.Top, views...)+"\n\n"+helpView)
 }
 
